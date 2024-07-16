@@ -6,6 +6,7 @@
 </template>
 
 <script>
+import '@fortawesome/fontawesome-free/css/all.css';
 import TaskManager from './components/TaskManager.vue';
 
 export default {

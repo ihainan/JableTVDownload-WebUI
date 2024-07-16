@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // 初始化数据库
-const dbPath = path.relative(process.cwd(), "../db/tasks.db");
+const dbPath = path.join(__dirname, "../db/tasks.db");
 console.log("doPath = " + dbPath);
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
@@ -119,8 +119,8 @@ const processTask = () => {
 
     const taskId = row.id;
     const url = row.url;
-    const relativePath = path.relative(process.cwd(), "../scripts/download-video.sh");
-    const downloadPath = path.relative(process.cwd(), "../downloads");
+    const relativePath = path.join(__dirname, "../scripts/download-video.sh");
+    const downloadPath = path.join(__dirname, "../downloads");
     console.log("relativePath = " + relativePath);
     updateTaskStatus(taskId, '正在运行', () => {
       const command = `bash ${relativePath} "${url.trim()}" "${downloadPath}"`;

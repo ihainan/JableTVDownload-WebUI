@@ -19,7 +19,6 @@
           </tr>
         </thead>
         <tbody>
-          <!-- 确保 taskId 被正确传递 -->
           <tr v-for="(taskId, index) in sortedTasks" :key="taskId">
             <th scope="row">{{ sortedTasks.length - index }}</th>
             <td class="text-break">{{ tasks[taskId].url }}</td>
@@ -28,8 +27,12 @@
               <span :class="getStatusBadgeClass(tasks[taskId].status)">{{ tasks[taskId].status }}</span>
             </td>
             <td>
-              <button class="btn btn-link" @click="viewLogs(taskId)">View Logs</button>
-              <button class="btn btn-danger btn-sm" @click="deleteTask(taskId)">Delete</button>
+              <button class="btn btn-link" @click="viewLogs(taskId)" title="View Logs">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn btn-danger btn-sm" @click="confirmDelete(taskId)" title="Delete">
+                <i class="fas fa-trash-alt"></i>
+              </button>
             </td>
           </tr>
         </tbody>
@@ -54,6 +57,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Delete Modal -->
+    <div v-if="showDeleteConfirm" class="modal" tabindex="-1" role="dialog" style="display: block;">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirm Delete</h5>
+            <button type="button" class="close" @click="closeDeleteConfirm" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete this task?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeDeleteConfirm">Cancel</button>
+            <button type="button" class="btn btn-danger" @click="deleteTaskConfirmed">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -67,7 +91,9 @@ export default {
       showLogs: false,
       logs: '',
       apiUrl: process.env.VUE_APP_API_URL,
-      urlError: ''
+      urlError: '',
+      showDeleteConfirm: false,
+      taskIdToDelete: null
     };
   },
   computed: {
@@ -81,7 +107,6 @@ export default {
       this.urlError = '';
       this.url = this.url.trim();
 
-      // 使用正则表达式检查 URL
       const urlPattern = /^https:\/\/jable\.tv\/videos\/[^/]+\/$/;
       if (!urlPattern.test(this.url)) {
         this.urlError = 'URL 格式不正确，请输入符合 https://jable.tv/videos/<番号>/ 格式的 URL';
@@ -111,15 +136,26 @@ export default {
         console.error(`Error fetching logs for task ${taskId}:`, error);
       }
     },
-    async deleteTask(taskId) {
-      try {
-        const response = await axios.delete(`${this.apiUrl}/task/${taskId}`);
-        if (response.status === 200) {
-          this.$delete(this.tasks, taskId); // Vue 方法删除对象的属性
+    confirmDelete(taskId) {
+      this.taskIdToDelete = taskId;
+      this.showDeleteConfirm = true;
+    },
+    async deleteTaskConfirmed() {
+      if (this.taskIdToDelete) {
+        try {
+          const response = await axios.delete(`${this.apiUrl}/task/${this.taskIdToDelete}`);
+          if (response.status === 200) {
+            this.$delete(this.tasks, this.taskIdToDelete);
+          }
+        } catch (error) {
+          console.error(`Error deleting task ${this.taskIdToDelete}:`, error);
         }
-      } catch (error) {
-        console.error(`Error deleting task ${taskId}:`, error);
       }
+      this.closeDeleteConfirm();
+    },
+    closeDeleteConfirm() {
+      this.taskIdToDelete = null;
+      this.showDeleteConfirm = false;
     },
     closeLogs() {
       this.showLogs = false;
@@ -135,12 +171,12 @@ export default {
       const date = new Date(dateString);
 
       const year = date.getFullYear();
-      const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 月需要加 1 并确保两位数
-      const day = date.getDate().toString().padStart(2, '0'); // 确保两位数
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
 
-      const hours = date.getHours().toString().padStart(2, '0'); // 确保两位数
-      const minutes = date.getMinutes().toString().padStart(2, '0'); // 确保两位数
-      const seconds = date.getSeconds().toString().padStart(2, '0'); // 确保两位数
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const seconds = date.getSeconds().toString().padStart(2, '0');
 
       return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
     },
@@ -217,6 +253,11 @@ export default {
 
 p.text-danger {
   color: red;
+}
+
+/* 更改图标按钮尺寸 */
+.btn-link i, .btn-danger i {
+  font-size: 1.2rem;
 }
 
 /* 为移动端设置字体大小和内边距 */
