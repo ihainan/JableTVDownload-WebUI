@@ -10,7 +10,9 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // 初始化数据库
-const db = new sqlite3.Database(path.join(__dirname, 'db/tasks.db'), (err) => {
+const dbPath = path.relative(process.cwd(), "../db/tasks.db");
+console.log("doPath = " + dbPath);
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Failed to open database', err);
   } else {
@@ -121,7 +123,7 @@ const processTask = () => {
     const downloadPath = path.relative(process.cwd(), "../downloads");
     console.log("relativePath = " + relativePath);
     updateTaskStatus(taskId, '正在运行', () => {
-      const command = `bash /app/scripts/download-video.sh "${url.trim()}" "/app/downloads"`;
+      const command = `bash ${relativePath} "${url.trim()}" "${downloadPath}"`;
       console.log('command = ' + command);
       const commandProcess = exec(command);
 

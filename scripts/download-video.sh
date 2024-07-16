@@ -23,9 +23,18 @@ fi
 echo "Video ID is $video_id"
 
 echo "Downloadig video $video_id"
-printf "$url\ny\n3\n" | python $CMD_DIR/../JableTVDownload/main.py
+# printf "$url\ny\n3\n" | python $CMD_DIR/../JableTVDownload/main.py
+#!/bin/bash
+
+# 循环 200 次
+for i in {1..200}
+do
+  # 生成一个随机数并输出
+  sleep 1
+  echo $RANDOM
+done
 echo "Video $video_id downloaded"
 
 echo "Moving $video_id to $path_to_save"
-mv "/app/$video_id" "$path_to_save"
+# mv "/app/$video_id" "$path_to_save"
 echo "$video_id moved"

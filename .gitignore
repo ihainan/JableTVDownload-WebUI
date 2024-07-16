@@ -417,4 +417,4 @@ yarn-error.log
 # End of https://www.toptal.com/developers/gitignore/api/node,vue,vuejs,macos,vim,visualstudiocode,python,linux
 
 downloads
-server/db/tasks.db
+tasks.db

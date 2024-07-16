@@ -1,7 +1,7 @@
 <!-- src/components/TaskManager.vue -->
 <template>
   <div class="container mt-5">
-    <h1 class="mb-4 text-center">Jable Downloader</h1>
+    <h1 class="mb-4 text-center">JableTV Downloader</h1>
     <div class="input-group mb-3">
       <input v-model="url" class="form-control" @keyup.enter="addUrl" placeholder="Enter URL">
       <button @click="addUrl" class="btn btn-primary">Add</button>
@@ -13,9 +13,9 @@
           <tr>
             <th scope="col">#</th>
             <th scope="col">URL</th>
-            <th scope="col">创建时间</th>
-            <th scope="col">当前状态</th>
-            <th scope="col">操作</th>
+            <th scope="col">Created Date</th>
+            <th scope="col">Status</th>
+            <th scope="col">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -132,8 +132,17 @@ export default {
       }
     },
     formatDate(dateString) {
-      const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-      return new Date(dateString).toLocaleDateString(undefined, options);
+      const date = new Date(dateString);
+
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 月需要加 1 并确保两位数
+      const day = date.getDate().toString().padStart(2, '0'); // 确保两位数
+
+      const hours = date.getHours().toString().padStart(2, '0'); // 确保两位数
+      const minutes = date.getMinutes().toString().padStart(2, '0'); // 确保两位数
+      const seconds = date.getSeconds().toString().padStart(2, '0'); // 确保两位数
+
+      return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
     },
     getStatusBadgeClass(status) {
       switch (status) {
@@ -199,8 +208,10 @@ export default {
 }
 
 .modal-body pre {
-  white-space: pre-wrap; /* 自动换行 */
-  word-wrap: break-word; /* 防止超长单词换行 */
+  white-space: pre-wrap;
+  /* 自动换行 */
+  word-wrap: break-word;
+  /* 防止超长单词换行 */
   font-family: "Courier New", Courier, monospace;
 }
 
@@ -213,7 +224,7 @@ p.text-danger {
   h1 {
     font-size: 1.5rem;
   }
-  
+
   .btn {
     font-size: 0.875rem;
     padding: 0.5rem 0.75rem;
