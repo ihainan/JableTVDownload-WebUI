@@ -1,0 +1,3 @@
+[submodule "JableTVDownload"]
+	path = JableTVDownload
+	url = https://github.com/hcjohn463/JableTVDownload.git

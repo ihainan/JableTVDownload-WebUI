@@ -1,0 +1,25 @@
+services:
+  # jable-downloader-script:
+  #   container_name: jable-downloader-script
+  #   build: 
+  #     context: .
+  #   volumes:
+  #     - ./downloads:/jable-downloader/downloads
+  #   command: bash /jable-downloader/scripts/download-video.sh https://jable.tv/videos/ssis-798/ /jable-downloader/downloads
+
+  jable-downloader-service:
+    container_name: jable-downloader-service
+    build: 
+      context: .
+    volumes:
+      - ./downloads:/app/downloads
+      - ./server/db:/app/server/db
+
+  jable-downloader-ui:
+    container_name: jable-downloader-ui
+    build: 
+      context: ./client
+    environment:
+      - API_ENDPOINT="http://jable-downloader-service:3000"
+    ports:
+      - 41056:80
