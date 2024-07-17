@@ -1,12 +1,4 @@
 services:
-  # jable-downloader-script:
-  #   container_name: jable-downloader-script
-  #   build: 
-  #     context: .
-  #   volumes:
-  #     - ./downloads:/jable-downloader/downloads
-  #   command: bash /jable-downloader/scripts/download-video.sh https://jable.tv/videos/ssis-798/ /jable-downloader/downloads
-
   jable-downloader-service:
     container_name: jable-downloader-service
     build: 

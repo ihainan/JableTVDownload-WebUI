@@ -28,10 +28,10 @@
             </td>
             <td>
               <button class="btn btn-link" @click="viewLogs(taskId)" title="View Logs">
-                <i class="fas fa-eye"></i>
+                <i class="fas fa-terminal"></i>
               </button>
               <button class="btn btn-danger btn-sm" @click="confirmDelete(taskId)" title="Delete">
-                <i class="fas fa-trash-alt"></i>
+                <i class="fas fa-trash"></i>
               </button>
             </td>
           </tr>
@@ -93,7 +93,8 @@ export default {
       apiUrl: process.env.VUE_APP_API_URL,
       urlError: '',
       showDeleteConfirm: false,
-      taskIdToDelete: null
+      taskIdToDelete: null,
+      logUpdateInterval: null // 添加日志更新定时器
     };
   },
   computed: {
@@ -106,7 +107,6 @@ export default {
     async addUrl() {
       this.urlError = '';
       this.url = this.url.trim();
-
       const urlPattern = /^https:\/\/jable\.tv\/videos\/[^/]+\/$/;
       if (!urlPattern.test(this.url)) {
         this.urlError = 'URL 格式不正确，请输入符合 https://jable.tv/videos/<番号>/ 格式的 URL';
@@ -128,12 +128,34 @@ export default {
     },
     async viewLogs(taskId) {
       try {
-        const response = await axios.get(`${this.apiUrl}/task_logs/${taskId}`);
-        this.logs = response.data.logs;
+        await this.fetchLogs(taskId);
         this.showLogs = true;
+        this.$nextTick(this.scrollToBottom);
         window.addEventListener('keydown', this.handleKeyDown);
+        // 设置定时器定期获取最新日志
+        this.logUpdateInterval = setInterval(async () => {
+          await this.fetchLogs(taskId);
+        }, 1000);
       } catch (error) {
         console.error(`Error fetching logs for task ${taskId}:`, error);
+      }
+    },
+    async fetchLogs(taskId) {
+      try {
+        const response = await axios.get(`${this.apiUrl}/task_logs/${taskId}`);
+        this.logs = response.data.logs;
+        this.$nextTick(this.scrollToBottom);
+      } catch (error) {
+        console.error(`Error fetching logs for task ${taskId}:`, error);
+      }
+    },
+    scrollToBottom() {
+      const modalBody = this.$el.querySelector('.modal-body');
+      if (modalBody) {
+        console.log("Current scrollHeight: ", modalBody.scrollHeight);
+        console.log("Current scrollTop: ", modalBody.scrollTop);
+        modalBody.scrollTop = modalBody.scrollHeight;
+        console.log("After setting scrollTop: ", modalBody.scrollTop);
       }
     },
     confirmDelete(taskId) {
@@ -161,6 +183,11 @@ export default {
       this.showLogs = false;
       this.logs = '';
       window.removeEventListener('keydown', this.handleKeyDown);
+      // 清除日志更新定时器
+      if (this.logUpdateInterval) {
+        clearInterval(this.logUpdateInterval);
+        this.logUpdateInterval = null;
+      }
     },
     handleKeyDown(event) {
       if (event.key === 'Escape' && this.showLogs) {
@@ -256,7 +283,8 @@ p.text-danger {
 }
 
 /* 更改图标按钮尺寸 */
-.btn-link i, .btn-danger i {
+.btn-link i,
+.btn-danger i {
   font-size: 1.2rem;
 }
 
