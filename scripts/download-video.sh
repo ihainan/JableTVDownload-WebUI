@@ -13,6 +13,10 @@ CMD="$0"
 CMD_DIR="$(cd "$(dirname "$CMD")" && pwd -P)"
 url="$1"
 path_to_save="$2"
+if [[ -z "$ENCODING_TYPE" ]]; then
+  ENCODING_TYPE="1"
+fi
+echo "ENCODING_TYPE = $ENCODING_TYPE"
 
 echo "Extract video ID from the URL..."
 video_id=$(echo "$url" | rev | cut -d'/' -f2 | rev)
@@ -23,7 +27,11 @@ fi
 echo "Video ID is $video_id"
 
 echo "Downloadig video $video_id"
-printf "$url\ny\n3\n" | python $CMD_DIR/../JableTVDownload/main.py
+if [[ "$ENCODING_TYPE" == "0" ]]; then
+  printf "$url\nn\n" | python $CMD_DIR/../JableTVDownload/main.py
+else
+  printf "$url\ny\n$ENCODING_TYPE\n" | python $CMD_DIR/../JableTVDownload/main.py
+fi
 echo "Video $video_id downloaded"
 
 echo "Moving $video_id to $path_to_save"
