@@ -144,7 +144,7 @@ export default {
       try {
         const response = await axios.get(`${this.apiUrl}/task_logs/${taskId}`);
         this.logs = response.data.logs;
-        this.$nextTick(this.scrollToBottom);
+        // this.$nextTick(this.scrollToBottom);
       } catch (error) {
         console.error(`Error fetching logs for task ${taskId}:`, error);
       }
