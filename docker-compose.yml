@@ -12,10 +12,10 @@ services:
     build: 
       context: .
     environment:
-      # 0. 下载视频不做任何处理
-      # 1. 快速无损转码，AAC ADTS 转 AAC，元数据挪到文件开头（JableTVDownload 作者推荐）
-      # 2. 使用 N 卡加速，转码为 H.264，码率 10000K
-      # 3. 使用 CPU 转码为 H.264，码率 3000K
+      # 0. 下载视频不做任何处理，MPEG-TS 封装格式，元数据有缺失
+      # 1. 快速无损转码，AAC ADTS 转 AAC，元数据挪到文件开头
+      # 2. （未在 docker 环境测试过）使用 N 卡加速，转码为 H.264，码率会被提高到 10000K
+      # 3. 使用 CPU 转码为 H.264，码率会被提高到 3000K
       - ENCODING_TYPE=1
     volumes:
       - ./downloads:/app/downloads
