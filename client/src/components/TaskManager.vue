@@ -21,7 +21,9 @@
         <tbody>
           <tr v-for="(taskId, index) in sortedTasks" :key="taskId">
             <th scope="row">{{ sortedTasks.length - index }}</th>
-            <td class="text-break">{{ tasks[taskId].url }}</td>
+            <td class="text-break">
+              <a :href="tasks[taskId].url" target="_blank">{{ tasks[taskId].url }}</a>
+            </td>
             <td>{{ formatDate(tasks[taskId].createdAt) }}</td>
             <td>
               <span :class="getStatusBadgeClass(tasks[taskId].status)">{{ tasks[taskId].status }}</span>
@@ -30,7 +32,7 @@
               <button class="btn btn-link" @click="viewLogs(taskId)" title="View Logs">
                 <i class="fas fa-terminal"></i>
               </button>
-              <button class="btn btn-danger btn-sm" @click="confirmDelete(taskId)" title="Delete">
+              <button class="btn btn-danger btn-sm" @click="confirmDelete(taskId)" title="Delete Task">
                 <i class="fas fa-trash"></i>
               </button>
             </td>
