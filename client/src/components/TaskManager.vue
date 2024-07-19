@@ -29,7 +29,10 @@
               <span :class="getStatusBadgeClass(tasks[taskId].status)">{{ tasks[taskId].status }}</span>
             </td>
             <td>
-              <button class="btn btn-link" @mouseover="showPreview(taskId, $event)" @mouseout="hidePreview" @click="playVideo(taskId)" title="Play Video">
+              <button class="btn btn-link" :class="{ 'play-disabled': tasks[taskId].status !== '成功' }"
+                @mouseover="tasks[taskId].status === '成功' && showPreview(taskId, $event)" @mouseout="hidePreview"
+                @click="tasks[taskId].status === '成功' && playVideo(taskId)"
+                :title="tasks[taskId].status === '成功' ? 'Play Video' : 'Video not available'">
                 <i class="fas fa-play"></i>
               </button>
               <button class="btn btn-link" @click="viewLogs(taskId)" title="View Logs">
@@ -113,7 +116,7 @@ export default {
   computed: {
     sortedTasks() {
       return Object.keys(this.tasks)
-      .sort((a, b) => new Date(this.tasks[b].createdAt) - new Date(this.tasks[a].createdAt));
+        .sort((a, b) => new Date(this.tasks[b].createdAt) - new Date(this.tasks[a].createdAt));
     }
   },
   methods: {
@@ -330,6 +333,7 @@ p.text-danger {
     max-width: 100%;
   }
 }
+
 .preview-window {
   position: fixed;
   border: 1px solid #ddd;
@@ -345,6 +349,12 @@ p.text-danger {
 }
 
 .preview-window {
-  transform: translate(-100%, 0); /* 向左移动窗体宽度，确保在鼠标左侧 */
+  transform: translate(-100%, 0);
+  /* 向左移动窗体宽度，确保在鼠标左侧 */
+}
+
+.play-disabled {
+  pointer-events: none;
+  color: grey;
 }
 </style>
