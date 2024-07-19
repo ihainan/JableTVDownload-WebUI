@@ -29,6 +29,9 @@
               <span :class="getStatusBadgeClass(tasks[taskId].status)">{{ tasks[taskId].status }}</span>
             </td>
             <td>
+              <button class="btn btn-link" @mouseover="showPreview(taskId, $event)" @mouseout="hidePreview" @click="playVideo(taskId)" title="Play Video">
+                <i class="fas fa-play"></i>
+              </button>
               <button class="btn btn-link" @click="viewLogs(taskId)" title="View Logs">
                 <i class="fas fa-terminal"></i>
               </button>
@@ -80,6 +83,11 @@
         </div>
       </div>
     </div>
+
+    <!-- 预览小窗 -->
+    <div v-if="previewVisible" :style="previewStyle" class="preview-window">
+      <img :src="previewImageUrl" alt="Preview" />
+    </div>
   </div>
 </template>
 
@@ -96,13 +104,16 @@ export default {
       urlError: '',
       showDeleteConfirm: false,
       taskIdToDelete: null,
-      logUpdateInterval: null // 添加日志更新定时器
+      logUpdateInterval: null,
+      previewVisible: false,
+      previewImageUrl: '',
+      previewStyle: {}
     };
   },
   computed: {
     sortedTasks() {
       return Object.keys(this.tasks)
-        .sort((a, b) => new Date(this.tasks[b].createdAt) - new Date(this.tasks[a].createdAt));
+      .sort((a, b) => new Date(this.tasks[b].createdAt) - new Date(this.tasks[a].createdAt));
     }
   },
   methods: {
@@ -134,7 +145,6 @@ export default {
         this.showLogs = true;
         this.$nextTick(this.scrollToBottom);
         window.addEventListener('keydown', this.handleKeyDown);
-        // 设置定时器定期获取最新日志
         this.logUpdateInterval = setInterval(async () => {
           await this.fetchLogs(taskId);
         }, 1000);
@@ -146,7 +156,6 @@ export default {
       try {
         const response = await axios.get(`${this.apiUrl}/task_logs/${taskId}`);
         this.logs = response.data.logs;
-        // this.$nextTick(this.scrollToBottom);
       } catch (error) {
         console.error(`Error fetching logs for task ${taskId}:`, error);
       }
@@ -154,10 +163,7 @@ export default {
     scrollToBottom() {
       const modalBody = this.$el.querySelector('.modal-body');
       if (modalBody) {
-        console.log("Current scrollHeight: ", modalBody.scrollHeight);
-        console.log("Current scrollTop: ", modalBody.scrollTop);
         modalBody.scrollTop = modalBody.scrollHeight;
-        console.log("After setting scrollTop: ", modalBody.scrollTop);
       }
     },
     confirmDelete(taskId) {
@@ -185,11 +191,8 @@ export default {
       this.showLogs = false;
       this.logs = '';
       window.removeEventListener('keydown', this.handleKeyDown);
-      // 清除日志更新定时器
-      if (this.logUpdateInterval) {
-        clearInterval(this.logUpdateInterval);
-        this.logUpdateInterval = null;
-      }
+      clearInterval(this.logUpdateInterval);
+      this.logUpdateInterval = null;
     },
     handleKeyDown(event) {
       if (event.key === 'Escape' && this.showLogs) {
@@ -198,15 +201,12 @@ export default {
     },
     formatDate(dateString) {
       const date = new Date(dateString);
-
       const year = date.getFullYear();
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const day = date.getDate().toString().padStart(2, '0');
-
       const hours = date.getHours().toString().padStart(2, '0');
       const minutes = date.getMinutes().toString().padStart(2, '0');
       const seconds = date.getSeconds().toString().padStart(2, '0');
-
       return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
     },
     getStatusBadgeClass(status) {
@@ -222,6 +222,27 @@ export default {
         default:
           return 'badge bg-secondary';
       }
+    },
+    playVideo(taskId) {
+      const videoId = this.extractVideoId(this.tasks[taskId].url);
+      const videoUrl = `${this.apiUrl}/video/${videoId}`;
+      window.open(videoUrl, '_blank');
+    },
+    showPreview(taskId, event) {
+      const videoId = this.extractVideoId(this.tasks[taskId].url);
+      this.previewImageUrl = `${this.apiUrl}/image/${videoId}`;
+      this.previewStyle = {
+        top: `${event.clientY + 10}px`,
+        left: `${event.clientX + 10}px`
+      };
+      this.previewVisible = true;
+    },
+    hidePreview() {
+      this.previewVisible = false;
+    },
+    extractVideoId(url) {
+      const match = url.match(/\/videos\/([^/]+)\//);
+      return match ? match[1] : '';
     }
   },
   mounted() {
@@ -308,5 +329,22 @@ p.text-danger {
   .modal-dialog.modal-lg {
     max-width: 100%;
   }
+}
+.preview-window {
+  position: fixed;
+  border: 1px solid #ddd;
+  background: white;
+  z-index: 1000;
+  padding: 5px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.preview-window img {
+  max-width: 200px;
+  max-height: 200px;
+}
+
+.preview-window {
+  transform: translate(-100%, 0); /* 向左移动窗体宽度，确保在鼠标左侧 */
 }
 </style>
