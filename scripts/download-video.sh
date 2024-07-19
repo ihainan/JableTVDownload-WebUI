@@ -29,7 +29,7 @@ echo "Video ID is $video_id"
 echo "Checking if the video file is already downloaded"
 video_save_path="$path_to_save/$video_id/$video_id.mp4"
 if [[ -f "$video_save_path" ]]; then
-  echo "video_save_path is already downloaded"
+  echo "$video_save_path is already downloaded"
   exit 0
 fi
 
