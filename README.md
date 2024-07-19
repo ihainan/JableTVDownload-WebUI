@@ -21,7 +21,6 @@ git clone --recurse-submodules git@github.com:ihainan/JableTVDownload-WebUI.git
 - Modify the docker-compose.yml file:
     - Change `./downloads` to the folder path where you want to save downloaded videos.
     - Change `./docker-test/db` to the folder path where you want to save the database file.
-    - Optionally, modify the `ENCODING_TYPE` environment variable. Check [this Python script](https://github.com/hcjohn463/JableTVDownload/blob/main/download.py) for more details about the encoding types.
 - Start the Docker services: 
 
 ``` bash

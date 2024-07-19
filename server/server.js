@@ -4,10 +4,15 @@ const cors = require('cors');
 const { exec } = require('child_process');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
+
+// paths
+const scriptPath = path.join(__dirname, "../scripts/download-video.sh");
+const downloadPath = path.join(__dirname, "../downloads");
 
 // 初始化数据库
 const dbPath = path.join(__dirname, "../db/tasks.db");
@@ -105,6 +110,62 @@ const updateTaskStatus = (taskId, status, callback) => {
   );
 };
 
+app.get('/image/:id', (req, res) => {
+  const imageId = req.params.id;
+  const imagePath = path.join(downloadPath + '/' + imageId, `${imageId}.jpg`);
+
+  fs.stat(imagePath, (err, stats) => {
+    if (err) {
+      console.error(`File not found: ${imagePath}`);
+      res.status(404).send("Image not found");
+      return;
+    }
+
+    // 设置响应头并传输图片
+    res.writeHead(200, {
+      'Content-Type': 'image/jpeg', // 根据图片格式设置
+      'Content-Length': stats.size,
+    });
+
+    fs.createReadStream(imagePath).pipe(res);
+  });
+});
+
+app.get('/video/:id', (req, res) => {
+  const videoId = req.params.id;
+  const videoPath = path.join(downloadPath + '/' + videoId, `${videoId}.mp4`);
+  console.log(videoPath);
+
+  const stat = fs.statSync(videoPath);
+  const fileSize = stat.size;
+  const range = req.headers.range;
+
+  if (range) {
+    const parts = range.replace(/bytes=/, '').split('-');
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    const chunkSize = end - start + 1;
+    const file = fs.createReadStream(videoPath, { start, end });
+    const head = {
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunkSize,
+      'Content-Type': 'video/mp4',
+    };
+
+    res.writeHead(206, head);
+    file.pipe(res);
+  } else {
+    const head = {
+      'Content-Length': fileSize,
+      'Content-Type': 'video/mp4',
+    };
+
+    res.writeHead(200, head);
+    fs.createReadStream(videoPath).pipe(res);
+  }
+});
+
 const processTask = () => {
   db.get('SELECT id, url FROM tasks WHERE status = "尚未开始" ORDER BY createdAt LIMIT 1', [], (err, row) => {
     if (err) {
@@ -119,11 +180,9 @@ const processTask = () => {
 
     const taskId = row.id;
     const url = row.url;
-    const relativePath = path.join(__dirname, "../scripts/download-video.sh");
-    const downloadPath = path.join(__dirname, "../downloads");
-    console.log("relativePath = " + relativePath);
+    console.log("scriptPath = " + scriptPath);
     updateTaskStatus(taskId, '正在运行', () => {
-      const command = `bash ${relativePath} "${url.trim()}" "${downloadPath}"`;
+      const command = `bash ${scriptPath} "${url.trim()}" "${downloadPath}"`;
       console.log('command = ' + command);
       const commandProcess = exec(command);
 
