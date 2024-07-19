@@ -26,6 +26,13 @@ if [[ -z "$video_id" ]]; then
 fi
 echo "Video ID is $video_id"
 
+echo "Checking if the video file is already downloaded"
+video_save_path="$path_to_save/$video_id/$video_id.mp4"
+if [[ -f "$video_save_path" ]]; then
+  echo "video_save_path is already downloaded"
+  exit 0
+fi
+
 echo "Downloadig video $video_id"
 if [[ "$ENCODING_TYPE" == "0" ]]; then
   printf "$url\nn\n" | python $CMD_DIR/../JableTVDownload/main.py
