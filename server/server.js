@@ -116,7 +116,7 @@ app.get('/image/:id', (req, res) => {
 
   fs.stat(imagePath, (err, stats) => {
     if (err) {
-      console.error(`File not found: ${imagePath}`);
+      // console.error(`File not found: ${imagePath}`);
       res.status(404).send("Image not found");
       return;
     }
@@ -134,36 +134,43 @@ app.get('/image/:id', (req, res) => {
 app.get('/video/:id', (req, res) => {
   const videoId = req.params.id;
   const videoPath = path.join(downloadPath + '/' + videoId, `${videoId}.mp4`);
-  console.log(videoPath);
 
-  const stat = fs.statSync(videoPath);
-  const fileSize = stat.size;
-  const range = req.headers.range;
+  fs.stat(videoPath, (err, stats) => {
+    if (err) {
+      // console.error(`File not found: ${imagePath}`);
+      res.status(404).send("Video not found");
+      return;
+    }
 
-  if (range) {
-    const parts = range.replace(/bytes=/, '').split('-');
-    const start = parseInt(parts[0], 10);
-    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-    const chunkSize = end - start + 1;
-    const file = fs.createReadStream(videoPath, { start, end });
-    const head = {
-      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-      'Accept-Ranges': 'bytes',
-      'Content-Length': chunkSize,
-      'Content-Type': 'video/mp4',
-    };
+    const stat = fs.statSync(videoPath);
+    const fileSize = stat.size;
+    const range = req.headers.range;
 
-    res.writeHead(206, head);
-    file.pipe(res);
-  } else {
-    const head = {
-      'Content-Length': fileSize,
-      'Content-Type': 'video/mp4',
-    };
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunkSize = end - start + 1;
+      const file = fs.createReadStream(videoPath, { start, end });
+      const head = {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunkSize,
+        'Content-Type': 'video/mp4',
+      };
 
-    res.writeHead(200, head);
-    fs.createReadStream(videoPath).pipe(res);
-  }
+      res.writeHead(206, head);
+      file.pipe(res);
+    } else {
+      const head = {
+        'Content-Length': fileSize,
+        'Content-Type': 'video/mp4',
+      };
+
+      res.writeHead(200, head);
+      fs.createReadStream(videoPath).pipe(res);
+    }
+  })
 });
 
 const processTask = () => {
