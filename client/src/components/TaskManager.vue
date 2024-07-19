@@ -1,14 +1,20 @@
 <!-- src/components/TaskManager.vue -->
 <template>
   <div class="container mt-5">
-    <h1 class="mb-4 text-center">JableTV Downloader</h1>
+    <h1 class="mb-4 text-center">
+        <span class="title-container">
+            <img src="download-video.png" alt="Icon" class="title-icon">
+            JableTV Downloader
+        </span>
+    </h1>
+    
     <div class="input-group mb-3">
       <input v-model="url" class="form-control" @keyup.enter="addUrl" placeholder="Enter URL">
-      <button @click="addUrl" class="btn btn-primary">Add</button>
+      <button @click="addUrl" class="btn btn-primary">&nbsp;&nbsp;&nbsp;Add&nbsp;&nbsp;&nbsp;</button>
     </div>
     <p v-if="urlError" class="text-danger">{{ urlError }}</p>
     <div class="table-responsive">
-      <table class="table table-bordered">
+      <table class="table table-striped">
         <thead class="thead-light">
           <tr>
             <th scope="col">#</th>
@@ -22,24 +28,24 @@
           <tr v-for="(taskId, index) in sortedTasks" :key="taskId">
             <th scope="row">{{ sortedTasks.length - index }}</th>
             <td class="text-break">
-              <a :href="tasks[taskId].url" target="_blank">{{ tasks[taskId].url }}</a>
+              <a :href="tasks[taskId].url" target="_blank">{{ this.extractVideoId(this.tasks[taskId].url).toUpperCase() }}</a>
             </td>
             <td>{{ formatDate(tasks[taskId].createdAt) }}</td>
             <td>
               <span :class="getStatusBadgeClass(tasks[taskId].status)">{{ tasks[taskId].status }}</span>
             </td>
             <td>
-              <button class="btn btn-link" :class="{ 'play-disabled': tasks[taskId].status !== '成功' }"
+              <button class="btn btn-link btn-sm" :class="{ 'play-disabled': tasks[taskId].status !== '成功' }"
                 @mouseover="tasks[taskId].status === '成功' && showPreview(taskId, $event)" @mouseout="hidePreview"
                 @click="tasks[taskId].status === '成功' && playVideo(taskId)"
                 :title="tasks[taskId].status === '成功' ? 'Play Video' : 'Video not available'">
                 <i class="fas fa-play"></i>
               </button>
-              <button class="btn btn-link" @click="viewLogs(taskId)" title="View Logs">
+              <button class="btn btn-link btn-sm" @click="viewLogs(taskId)" title="View Logs">
                 <i class="fas fa-terminal"></i>
               </button>
-              <button class="btn btn-danger btn-sm" @click="confirmDelete(taskId)" title="Delete Task">
-                <i class="fas fa-trash"></i>
+              <button class="btn btn-light btn-sm" @click="confirmDelete(taskId)" title="Delete Task">
+                <i class="fas fa-trash-can"></i>
               </button>
             </td>
           </tr>
@@ -356,5 +362,16 @@ p.text-danger {
 .play-disabled {
   pointer-events: none;
   color: grey;
+}
+
+.title-icon {
+    vertical-align: middle; /* 让图标的垂直对齐到文字中线 */
+    margin-right: 8px; /* 文字与图标之间的间距 */
+    width: 50px;
+}
+
+.title-container {
+    display: inline-flex;
+    align-items: center; /* 垂直方向居中对齐 */
 }
 </style>
