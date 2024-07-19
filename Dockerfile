@@ -18,6 +18,12 @@ RUN mkdir -p downloads
 # copy folders and files
 ADD JableTVDownload JableTVDownload
 
+# update the Python scripts
+RUN sed -i "s|url = input('輸入jable網址:')|url = input('輸入jable網址:\\\n')|" JableTVDownload/main.py
+RUN sed -i "s|action = input('要轉檔嗎?\[y/n\]')|action = input('要轉檔嗎?\[y/n\]\\\n')|" JableTVDownload/download.py
+RUN sed -i "s|action = input('選擇轉檔方案\[1:僅轉換格式(默認,推薦) 2:NVIDIA GPU 轉檔 3:CPU 轉檔\]')|action = input('選擇轉檔方案\[1:僅轉換格式(默認,推薦) 2:NVIDIA GPU 轉檔 3:CPU 轉檔\]\\\n')|" JableTVDownload/download.py
+RUN sed -i "s|end='', flush=True|end='\\\n', flush=True|" JableTVDownload/crawler.py
+
 # pip
 # RUN pip install --upgrade pip --index-url https://mirrors.sustech.edu.cn/pypi/web/simple
 # RUN pip config set global.index-url https://mirrors.sustech.edu.cn/pypi/web/simple

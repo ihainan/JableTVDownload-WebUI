@@ -35,5 +35,5 @@ fi
 echo "Video $video_id downloaded"
 
 echo "Moving $video_id to $path_to_save"
-mv "/app/$video_id" "$path_to_save"
+mv "./$video_id" "$path_to_save"
 echo "$video_id moved"
