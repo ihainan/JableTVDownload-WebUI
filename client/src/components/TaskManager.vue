@@ -2,16 +2,20 @@
 <template>
   <div class="container mt-5">
     <h1 class="mb-4 text-center">
-        <span class="title-container">
-            <img src="download-video.png" alt="Icon" class="title-icon">
-            JableTV Downloader
-        </span>
+      <span class="title-container">
+        <img src="download-video.png" alt="Icon" class="title-icon">
+        JableTV Downloader
+      </span>
     </h1>
-    
+
     <div class="input-group mb-3">
-      <input v-model="url" class="form-control" @keyup.enter="addUrl" placeholder="Enter URL">
+      <!-- <div class="input-group-prepend">
+        <span class="input-group-text no-right-radius">https://jable.tv/videos/</span>
+      </div> -->
+      <input v-model="userInput" class="form-control no-focus-outline" @keyup.enter="addUrl" placeholder="番号或网址，例如 ssis-798">
       <button @click="addUrl" class="btn btn-primary">&nbsp;&nbsp;&nbsp;Add&nbsp;&nbsp;&nbsp;</button>
     </div>
+    
     <p v-if="urlError" class="text-danger">{{ urlError }}</p>
     <div class="table-responsive">
       <table class="table table-striped">
@@ -28,7 +32,8 @@
           <tr v-for="(taskId, index) in sortedTasks" :key="taskId">
             <th scope="row">{{ sortedTasks.length - index }}</th>
             <td class="text-break">
-              <a :href="tasks[taskId].url" target="_blank">{{ this.extractVideoId(this.tasks[taskId].url).toUpperCase() }}</a>
+              <a :href="tasks[taskId].url" target="_blank">{{ this.extractVideoId(this.tasks[taskId].url).toUpperCase()
+                }}</a>
             </td>
             <td>{{ formatDate(tasks[taskId].createdAt) }}</td>
             <td>
@@ -37,7 +42,7 @@
             <td>
               <button class="btn btn-link btn-sm" :class="{ 'play-disabled': tasks[taskId].status !== '成功' }"
                 @mouseover="tasks[taskId].status === '成功' && showPreview(taskId, $event)" @mouseout="hidePreview"
-                @click="tasks[taskId].status === '成功' && playVideo(taskId)"
+                @click="tasks[taskId].status === '成功' && hidePreview() && playVideo(taskId)"
                 :title="tasks[taskId].status === '成功' ? 'Play Video' : 'Video not available'">
                 <i class="fas fa-play"></i>
               </button>
@@ -105,7 +110,7 @@ import axios from 'axios';
 export default {
   data() {
     return {
-      url: '',
+      userInput: '',
       tasks: {},
       showLogs: false,
       logs: '',
@@ -128,18 +133,24 @@ export default {
   methods: {
     async addUrl() {
       this.urlError = '';
-      this.url = this.url.trim();
+      let jableURL;
+      this.userInput = this.userInput.trim().toLowerCase();
       const urlPattern = /^https:\/\/jable\.tv\/videos\/[^/]+\/$/;
-      if (!urlPattern.test(this.url)) {
+      if (urlPattern.test(this.userInput)) {
+        jableURL = this.userInput;
+      } else {
+        jableURL = 'https://jable.tv/videos/' + this.userInput + '/';
+      }
+    
+      if (!urlPattern.test(jableURL)) {
         this.urlError = 'URL 格式不正确，请输入符合 https://jable.tv/videos/<番号>/ 格式的 URL';
         return;
       }
-
-      if (this.url) {
-        const response = await axios.post(`${this.apiUrl}/add_url`, { url: this.url });
+      if (jableURL) {
+        const response = await axios.post(`${this.apiUrl}/add_url`, { url: jableURL });
         const taskId = response.data.taskId;
-        this.tasks[taskId] = { url: this.url, status: '尚未开始', createdAt: new Date().toISOString() };
-        this.url = '';
+        this.tasks[taskId] = { url: jableURL, status: '尚未开始', createdAt: new Date().toISOString() };
+        this.userInput = '';
         this.updateTaskStatus();
       }
     },
@@ -248,6 +259,7 @@ export default {
     },
     hidePreview() {
       this.previewVisible = false;
+      return true;
     },
     extractVideoId(url) {
       const match = url.match(/\/videos\/([^/]+)\//);
@@ -365,13 +377,36 @@ p.text-danger {
 }
 
 .title-icon {
-    vertical-align: middle; /* 让图标的垂直对齐到文字中线 */
-    margin-right: 8px; /* 文字与图标之间的间距 */
-    width: 50px;
+  vertical-align: middle;
+  /* 让图标的垂直对齐到文字中线 */
+  margin-right: 8px;
+  /* 文字与图标之间的间距 */
+  width: 50px;
 }
 
 .title-container {
-    display: inline-flex;
-    align-items: center; /* 垂直方向居中对齐 */
+  display: inline-flex;
+  align-items: center;
+  /* 垂直方向居中对齐 */
+}
+
+.input-group-text {
+  background-color: #e9ecef;  /* optional: customize as needed */
+  border: 1px solid #ced4da; /* optional: customize as needed */
+}
+
+.no-focus-outline:focus {
+  outline: none;
+  box-shadow: none;
+  background-color: inherit;  /* Optional: Match the input background color to avoid changes */
+}
+
+.no-right-radius {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  font-family: 'Roboto', sans-serif;
+  color: #868686;
+  font-size: 1rem;
+  /* font-weight: bold; */
 }
 </style>
