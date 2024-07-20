@@ -14,6 +14,7 @@ RUN apk add bash
 
 # create directories
 RUN mkdir -p downloads
+RUN mkdir -p tmp_downloads
 
 # copy folders and files
 ADD JableTVDownload JableTVDownload

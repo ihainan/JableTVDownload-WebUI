@@ -12,48 +12,92 @@ app.use(cors());
 
 // paths
 const scriptPath = path.join(__dirname, "../scripts/download-video.sh");
+const tmpDownloadPath = path.join(__dirname, "../tmp_downloads");
 const downloadPath = path.join(__dirname, "../downloads");
 
-// 初始化数据库
+// remove the temporary directory
+fs.rmSync(tmpDownloadPath, { recursive: true, force: true });
+fs.mkdirSync(tmpDownloadPath);
+
+// initialize database
 const dbPath = path.join(__dirname, "../db/tasks.db");
+const dbDir = path.join(__dirname, "../db");
 console.log("doPath = " + dbPath);
-const db = new sqlite3.Database(dbPath, (err) => {
+let db;
+
+// change db file permission
+fs.stat(dbDir, (err, dirStats) => {
   if (err) {
-    console.error('Failed to open database', err);
+    console.error('Failed to get directory stats', err);
   } else {
-    console.log('Connected to the tasks database.');
+    const dirMode = dirStats.mode;
+    const dirUid = dirStats.uid;
+    const dirGid = dirStats.gid;
+    db = new sqlite3.Database(dbPath, (err) => {
+      if (err) {
+        console.error('Failed to open database', err);
+      } else {
+        console.log('Connected to the tasks database.');
+        fs.chmod(dbPath, dirMode, (err) => {
+          if (err) {
+            console.error('Failed to set database file permissions', err);
+          } else {
+            console.log('permission changed for db file');
+            fs.chown(dbPath, dirUid, dirGid, (err) => {
+              console.log('owner changed for db file');
+              if (err) {
+                console.error('Failed to set database file owner', err);
+              } else {
+                console.log('Database file permissions and owner set to match directory');
+
+                db = new sqlite3.Database(dbPath, (err) => {
+                  if (err) {
+                    console.error('Failed to open database', err);
+                  } else {
+                    console.log('Connected to the tasks database.');
+                    initializeDB();
+                  }
+                });
+              }
+            });
+          }
+        });
+      }   
+    });    
   }
 });
 
-db.serialize(() => {
-  // 创建 tasks 表
-  db.run(`
-    CREATE TABLE IF NOT EXISTS tasks (
-      id TEXT PRIMARY KEY,
-      url TEXT,
-      status TEXT,
-      createdAt TEXT,
-      logs TEXT
-    )
-  `, function(err) {
-    if (err) {
-      console.error('Failed to create table', err.message);
-    } else {
-      console.log(`Table created`);
-    }
-  });  
-  db.run(`
-    UPDATE tasks
-    SET status = '失败'
-    WHERE status = '正在运行'
-  `, function(err) {
-    if (err) {
-      console.error('Failed to update task status', err.message);
-    } else {
-      console.log(`Rows updated: ${this.changes}`);
-    }
-  });  
-});
+function initializeDB() {
+  db.serialize(() => {
+    // create tasks table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id TEXT PRIMARY KEY,
+        url TEXT,
+        status TEXT,
+        createdAt TEXT,
+        logs TEXT
+      )
+    `, function(err) {
+      if (err) {
+        console.error('Failed to create table', err.message);
+      } else {
+        console.log(`Table created`);
+      }
+    });  
+    db.run(`
+      UPDATE tasks
+      SET status = '失败'
+      WHERE status = '正在运行'
+    `, function(err) {
+      if (err) {
+        console.error('Failed to update task status', err.message);
+      } else {
+        console.log(`Rows updated: ${this.changes}`);
+      }
+    });  
+  });
+}
 
 const addTask = (url) => {
   const taskId = Date.now().toString();
@@ -140,7 +184,6 @@ app.get('/image/:id', (req, res) => {
       return;
     }
 
-    // 设置响应头并传输图片
     res.writeHead(200, {
       'Content-Type': 'image/jpeg', // 根据图片格式设置
       'Content-Length': stats.size,
@@ -208,7 +251,7 @@ const processTask = () => {
     const url = row.url;
     console.log("scriptPath = " + scriptPath);
     updateTaskStatus(taskId, '正在运行', () => {
-      const command = `bash ${scriptPath} "${url.trim()}" "${downloadPath}"`;
+      const command = `cd ${tmpDownloadPath} && bash ${scriptPath} "${url.trim()}" "${downloadPath}"`;
       console.log('command = ' + command);
       const commandProcess = exec(command);
 
