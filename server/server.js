@@ -25,16 +25,35 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
-// 创建 tasks 表
-db.run(`
-  CREATE TABLE IF NOT EXISTS tasks (
-    id TEXT PRIMARY KEY,
-    url TEXT,
-    status TEXT,
-    createdAt TEXT,
-    logs TEXT
-  )
-`);
+db.serialize(() => {
+  // 创建 tasks 表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS tasks (
+      id TEXT PRIMARY KEY,
+      url TEXT,
+      status TEXT,
+      createdAt TEXT,
+      logs TEXT
+    )
+  `, function(err) {
+    if (err) {
+      console.error('Failed to create table', err.message);
+    } else {
+      console.log(`Table created`);
+    }
+  });  
+  db.run(`
+    UPDATE tasks
+    SET status = '失败'
+    WHERE status = '正在运行'
+  `, function(err) {
+    if (err) {
+      console.error('Failed to update task status', err.message);
+    } else {
+      console.log(`Rows updated: ${this.changes}`);
+    }
+  });  
+});
 
 const addTask = (url) => {
   const taskId = Date.now().toString();
@@ -198,6 +217,7 @@ const processTask = () => {
       });
 
       commandProcess.stderr.on('data', (data) => {
+        console.log('Error message from script: ' + data.toString());
         appendTaskLogs(taskId, data.toString());
       });
 
@@ -207,6 +227,7 @@ const processTask = () => {
             processTask(); // 处理下一个任务
           });
         } else {
+          console.log('Failed to execute task, exit code = ' + code)
           appendTaskLogs(taskId, `\nExit code = ${code}`, () => {
             updateTaskStatus(taskId, '失败', () => {
               processTask(); // 处理下一个任务
