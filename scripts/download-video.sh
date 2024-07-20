@@ -42,5 +42,9 @@ fi
 echo "Video $video_id downloaded"
 
 echo "Moving $video_id to $path_to_save"
+DEST_OWNER=$(stat -c '%u:%g' "$path_to_save")
+DEST_PERMISSIONS=$(stat -c '%a' "$path_to_save")
 mv "./$video_id" "$path_to_save"
+chown -R "$DEST_OWNER" "$path_to_save/$video_id"
+chmod -R "$DEST_PERMISSIONS" "$path_to_save/$video_id"
 echo "$video_id moved"

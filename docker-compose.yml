@@ -5,7 +5,7 @@ services:
       context: .
     volumes:
       - ./downloads:/app/downloads
-      - ./docker-test/db:/app/db
+      - ./db:/app/db
 
   jable-downloader-ui:
     container_name: jable-downloader-ui
