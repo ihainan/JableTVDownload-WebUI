@@ -25,7 +25,6 @@ const dbDir = path.join(__dirname, "../db");
 console.log("doPath = " + dbPath);
 let db;
 
-// change db file permission
 fs.stat(dbDir, (err, dirStats) => {
   if (err) {
     console.error('Failed to get directory stats', err);
@@ -33,43 +32,39 @@ fs.stat(dbDir, (err, dirStats) => {
     const dirMode = dirStats.mode;
     const dirUid = dirStats.uid;
     const dirGid = dirStats.gid;
+
+    // Open the database connection once
     db = new sqlite3.Database(dbPath, (err) => {
       if (err) {
         console.error('Failed to open database', err);
       } else {
         console.log('Connected to the tasks database.');
+        
+        // Change file permissions and ownership
         fs.chmod(dbPath, dirMode, (err) => {
           if (err) {
             console.error('Failed to set database file permissions', err);
           } else {
-            console.log('permission changed for db file');
+            console.log('Permission changed for db file');
             fs.chown(dbPath, dirUid, dirGid, (err) => {
-              console.log('owner changed for db file');
               if (err) {
                 console.error('Failed to set database file owner', err);
               } else {
                 console.log('Database file permissions and owner set to match directory');
 
-                db = new sqlite3.Database(dbPath, (err) => {
-                  if (err) {
-                    console.error('Failed to open database', err);
-                  } else {
-                    console.log('Connected to the tasks database.');
-                    initializeDB();
-                  }
-                });
+                // Initialize the database only after setting permissions and ownership
+                initializeDB();
               }
             });
           }
         });
-      }   
-    });    
+      }
+    });
   }
 });
 
 function initializeDB() {
   db.serialize(() => {
-    // create tasks table
     db.run(`
       CREATE TABLE IF NOT EXISTS tasks (
         id TEXT PRIMARY KEY,
@@ -82,9 +77,10 @@ function initializeDB() {
       if (err) {
         console.error('Failed to create table', err.message);
       } else {
-        console.log(`Table created`);
+        console.log('Table created');
       }
-    });  
+    });
+    
     db.run(`
       UPDATE tasks
       SET status = '失败'
@@ -95,7 +91,7 @@ function initializeDB() {
       } else {
         console.log(`Rows updated: ${this.changes}`);
       }
-    });  
+    });
   });
 }
 
