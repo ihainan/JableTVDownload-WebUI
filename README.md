@@ -8,7 +8,7 @@ JableTV Download WebUI is a user-friendly web interface for downloading videos f
 
 - Create the following `docker-compose.yml` file:
 
-```
+``` YAML
 services:
   jable-downloader-service:
     container_name: jable-downloader-service
