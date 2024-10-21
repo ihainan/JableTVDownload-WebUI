@@ -12,16 +12,17 @@
       <!-- <div class="input-group-prepend">
         <span class="input-group-text no-right-radius">https://jable.tv/videos/</span>
       </div> -->
-      <input v-model="userInput" class="form-control no-focus-outline" @keyup.enter="addUrl" placeholder="番号或网址，例如 ssis-798">
+      <input v-model="userInput" class="form-control no-focus-outline" @keyup.enter="addUrl"
+        placeholder="番号或网址，例如 ssis-798">
       <button @click="addUrl" class="btn btn-primary">&nbsp;&nbsp;&nbsp;Add&nbsp;&nbsp;&nbsp;</button>
     </div>
-    
+
     <p v-if="urlError" class="text-danger">{{ urlError }}</p>
     <div class="table-responsive">
       <table class="table table-striped">
         <thead class="thead-light">
           <tr>
-            <th scope="col">#</th>
+            <!-- <th scope="col">#</th> -->
             <th scope="col">URL</th>
             <th scope="col">Created Date</th>
             <th scope="col">Status</th>
@@ -29,8 +30,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(taskId, index) in sortedTasks" :key="taskId">
-            <th scope="row">{{ sortedTasks.length - index }}</th>
+          <tr v-for="(taskId) in paginatedTasks" :key="taskId">
+            <!-- <th scope="row">{{ calculateGlobalIndex(index) }}</th> -->
             <td class="text-break">
               <a :href="tasks[taskId].url" target="_blank">{{ this.extractVideoId(this.tasks[taskId].url).toUpperCase()
                 }}</a>
@@ -57,6 +58,20 @@
         </tbody>
       </table>
     </div>
+
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center">
+        <li class="page-item" :class="{ disabled: currentPage === 1 }">
+          <a class="page-link" href="#" @click.prevent="prevPage">Previous</a>
+        </li>
+        <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: page === currentPage }">
+          <a class="page-link" href="#" @click.prevent="goToPage(page)">{{ page }}</a>
+        </li>
+        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+          <a class="page-link" href="#" @click.prevent="nextPage">Next</a>
+        </li>
+      </ul>
+    </nav>
 
     <div v-if="showLogs" class="modal" tabindex="-1" role="dialog" style="display: block;">
       <div class="modal-dialog modal-lg" role="document">
@@ -121,16 +136,28 @@ export default {
       logUpdateInterval: null,
       previewVisible: false,
       previewImageUrl: '',
-      previewStyle: {}
+      previewStyle: {},
+      currentPage: 1,
+      pageSize: 10,
+      totalTasks: 0
     };
   },
   computed: {
+    paginatedTasks() {
+      return this.sortedTasks; 
+    },
     sortedTasks() {
-      return Object.keys(this.tasks)
-        .sort((a, b) => new Date(this.tasks[b].createdAt) - new Date(this.tasks[a].createdAt));
+      return Object.keys(this.tasks).sort((a, b) => new Date(this.tasks[b].createdAt) - new Date(this.tasks[a].createdAt));
+    },
+    totalPages() {
+      return Math.ceil(this.totalTasks / this.pageSize);
     }
   },
   methods: {
+    calculateGlobalIndex(index) {
+      // 计算全局索引，末尾任务排为 1
+      return this.totalTasks - ((this.currentPage - 1) * this.pageSize) - index;
+    },
     async addUrl() {
       this.urlError = '';
       let jableURL;
@@ -141,7 +168,7 @@ export default {
       } else {
         jableURL = 'https://jable.tv/videos/' + this.userInput + '/';
       }
-    
+
       if (!urlPattern.test(jableURL)) {
         this.urlError = 'URL 格式不正确，请输入符合 https://jable.tv/videos/<番号>/ 格式的 URL';
         return;
@@ -155,9 +182,25 @@ export default {
       }
     },
     async updateTaskStatus() {
-      const response = await axios.get(`${this.apiUrl}/task_status`);
-      this.tasks = response.data;
+      const response = await axios.get(`${this.apiUrl}/task_status`, {
+        params: {
+          page: this.currentPage,
+          pageSize: this.pageSize
+        }
+      });
+      this.tasks = response.data.tasks;
+      this.totalTasks = response.data.total;
       setTimeout(this.updateTaskStatus, 1000);
+    },
+    async updateTaskStatusNow() {
+      const response = await axios.get(`${this.apiUrl}/task_status`, {
+        params: {
+          page: this.currentPage,
+          pageSize: this.pageSize
+        }
+      });
+      this.tasks = response.data.tasks;
+      this.totalTasks = response.data.total;
     },
     async viewLogs(taskId) {
       try {
@@ -264,6 +307,24 @@ export default {
     extractVideoId(url) {
       const match = url.match(/\/videos\/([^/]+)\//);
       return match ? match[1] : '';
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+        this.updateTaskStatusNow();
+      }
+    },
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+        this.updateTaskStatusNow();
+      }
+    },
+    goToPage(page) {
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page;
+        this.updateTaskStatusNow();
+      }
     }
   },
   mounted() {
@@ -272,7 +333,8 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('keydown', this.handleKeyDown);
-  }
+  },
+
 };
 </script>
 
@@ -391,14 +453,17 @@ p.text-danger {
 }
 
 .input-group-text {
-  background-color: #e9ecef;  /* optional: customize as needed */
-  border: 1px solid #ced4da; /* optional: customize as needed */
+  background-color: #e9ecef;
+  /* optional: customize as needed */
+  border: 1px solid #ced4da;
+  /* optional: customize as needed */
 }
 
 .no-focus-outline:focus {
   outline: none;
   box-shadow: none;
-  background-color: inherit;  /* Optional: Match the input background color to avoid changes */
+  background-color: inherit;
+  /* Optional: Match the input background color to avoid changes */
 }
 
 .no-right-radius {
@@ -408,5 +473,31 @@ p.text-danger {
   color: #868686;
   font-size: 1rem;
   /* font-weight: bold; */
+}
+
+.pagination {
+  margin-top: 20px;
+}
+
+.page-link {
+  color: #007bff;
+  /* 链接的颜色 */
+}
+
+.page-link:hover {
+  color: #0056b3;
+  /* 悬停时链接的颜色 */
+}
+
+.page-item.active .page-link {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.page-item.disabled .page-link {
+  color: #6c757d;
+  pointer-events: none;
+  cursor: default;
 }
 </style>
