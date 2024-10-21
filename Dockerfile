@@ -6,7 +6,7 @@ RUN chmod -R 777 /app
 # download dependencies
 # RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 RUN apk update 
-# RUN apk add build-base
+RUN apk add build-base
 RUN apk add ffmpeg
 RUN apk add chromium
 RUN apk add chromium-chromedriver
