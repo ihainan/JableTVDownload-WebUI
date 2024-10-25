@@ -105,8 +105,8 @@ const addTask = (url) => {
   return taskId;
 };
 
-const getTaskStatus = (callback) => {
-  db.all('SELECT id, url, status, createdAt FROM tasks', [], (err, rows) => {
+const getTaskStatus = (offset, pageSize, callback) => {
+  db.all('SELECT id, url, status, createdAt FROM tasks ORDER BY createdAt DESC LIMIT ? OFFSET ?', [pageSize, offset], (err, rows) => {
     if (err) {
       console.error('Failed to fetch tasks', err);
       callback({});
@@ -119,7 +119,14 @@ const getTaskStatus = (callback) => {
           createdAt: row.createdAt
         };
       });
-      callback(taskStatus);
+      db.get('SELECT COUNT(*) AS count FROM tasks', [], (err, countRow) => {
+        if (err) {
+          console.error('Failed to fetch total task count', err);
+          callback({ tasks: taskStatus, total: 0 });
+        } else {
+          callback({ tasks: taskStatus, total: countRow.count });
+        }
+      });
     }
   });
 };
@@ -292,8 +299,11 @@ app.delete('/task/:taskId', (req, res) => {
 });
 
 app.get('/task_status', (req, res) => {
-  getTaskStatus((taskStatus) => {
-    res.json(taskStatus);
+  const pageSize = parseInt(req.query.pageSize) || 10;
+  const page = parseInt(req.query.page) || 1;
+  const offset = (page - 1) * pageSize;
+  getTaskStatus(offset, pageSize, (result) => {
+    res.json(result);
   });
 });
 

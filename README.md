@@ -6,10 +6,24 @@ JableTV Download WebUI is a user-friendly web interface for downloading videos f
 
 ## Installation
 
-- Clone this repository: 
+- Create the following `docker-compose.yml` file:
 
-``` bash
-git clone --recurse-submodules git@github.com:ihainan/JableTVDownload-WebUI.git
+``` YAML
+services:
+  jable-downloader-service:
+    container_name: jable-downloader-service
+    image: bypass42/jable-downloader-service:latest
+    volumes:
+      - ./downloads:/app/downloads
+      - ./db:/app/db
+
+  jable-downloader-ui:
+    container_name: jable-downloader-ui
+    image: bypass42/jable-downloader-ui:latest
+    environment:
+      - API_ENDPOINT="http://jable-downloader-service:3000"
+    ports:
+      - 41056:80
 ```
 
 - Modify the docker-compose.yml file:
@@ -19,7 +33,7 @@ git clone --recurse-submodules git@github.com:ihainan/JableTVDownload-WebUI.git
 - Start the Docker services: 
 
 ``` bash
-docker-compose up -d --build
+docker-compose up -d
 ```
 - Access the web interface by navigating to http://<ip_address>:41056 in your web browser.
 
