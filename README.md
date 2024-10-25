@@ -13,6 +13,7 @@ services:
   jable-downloader-service:
     container_name: jable-downloader-service
     image: bypass42/jable-downloader-service:latest
+    restart: unless-stopped
     volumes:
       - ./downloads:/app/downloads
       - ./db:/app/db
@@ -20,6 +21,7 @@ services:
   jable-downloader-ui:
     container_name: jable-downloader-ui
     image: bypass42/jable-downloader-ui:latest
+    restart: unless-stopped
     environment:
       - API_ENDPOINT="http://jable-downloader-service:3000"
     ports:
